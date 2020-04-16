@@ -1,0 +1,15 @@
+version: '3.7'
+services:
+  web:
+    build: ./web
+    restart: unless-stopped
+    ports:
+      - 8000:8000
+
+  redis:
+    image: redis
+    restart: unless-stopped
+
+  db:
+    image: postgres:11
+    restart: unless-stopped
