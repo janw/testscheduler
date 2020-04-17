@@ -2,7 +2,9 @@ from flask import Flask
 from flask_restful import Api
 from flask_rq2 import RQ
 
-application = Flask(__name__)
+application = Flask(
+    __name__, static_url_path="/static", static_folder="../frontend/dist",
+)
 api = Api(application, prefix="/api")
 rq = RQ(application)
 

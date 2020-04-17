@@ -3,5 +3,4 @@ from testexecutor import application
 
 @application.route("/")
 def index():
-    # Serve SPA here
-    return ""
+    return application.send_static_file("index.html")
