@@ -19,7 +19,7 @@ class TestRun(db.Model):
     env_id = db.Column(db.Integer, nullable=False)
     path = db.Column(db.String(), nullable=False)
     status = db.Column(db.Enum(TestStatus), nullable=False, default=TestStatus.created)
-    logs = db.Column(db.Text, nullable=True)
+    logs = db.Column(db.Text, nullable=False, default="")
 
     def __repr__(self):
         return f"<TestRun {self.id} (Env {self.env_id})>"

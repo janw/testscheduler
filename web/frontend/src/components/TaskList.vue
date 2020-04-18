@@ -56,7 +56,7 @@ export default {
         { key: "id", label: "ID" },
         { key: "username", label: "Requester" },
         "created_at",
-        "test_env",
+        { key: "env_id", label: "Test Env" },
         "path",
         "status",
         "details"

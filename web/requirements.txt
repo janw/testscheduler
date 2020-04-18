@@ -2,3 +2,5 @@ Flask==1.1.2
 Flask-RESTful==0.3.8
 Flask-RQ2==18.3
 gunicorn==20.0.4
+Pygments==2.6.1
+pygments-ansi-color==0.0.5
