@@ -1,15 +1,27 @@
-version: '3.7'
+version: "3.7"
+
+x-common-conf: &common-conf
+  build: ./web
+  restart: unless-stopped
+  depends_on:
+    - redis
+  environment:
+    RQ_REDIS_URL: "redis://redis"
+
 services:
   web:
-    build: ./web
-    restart: unless-stopped
+    <<: *common-conf
     ports:
       - 8000:8000
 
+  worker:
+    <<: *common-conf
+    entrypoint: ["rq", "worker"]
+
   redis:
-    image: redis
+    image: redis:alpine
     restart: unless-stopped
 
   db:
-    image: postgres:11
+    image: postgres:11-alpine
     restart: unless-stopped
