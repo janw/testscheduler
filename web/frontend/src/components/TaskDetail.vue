@@ -28,6 +28,15 @@
 <script>
 export default {
   props: ["id"],
+  watch: {
+    id: function(newVal, oldVal) {
+      this.data = null;
+      this.$api
+        .get(`/api/tasks/${newVal}`)
+        .then(response => (this.data = response.data))
+        .catch(error => {});
+    }
+  },
   data() {
     return {
       data: null,
