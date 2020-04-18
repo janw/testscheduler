@@ -11,9 +11,8 @@ testrun_fields = {
     "id": fields.Integer,
     "username": fields.String,
     "created_at": fields.DateTime(dt_format="iso8601"),
-    "test_env": fields.Integer,
+    "env_id": fields.Integer,
     "path": fields.String,
     "status": TestStatusMarshaller,
+    "logs": fields.Boolean,
 }
-
-testrun_fields_with_logs = {**testrun_fields, "logs": fields.String}
