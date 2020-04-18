@@ -2,12 +2,17 @@ from flask_restful import Resource
 from flask_restful import marshal_with
 from werkzeug import exceptions
 
+from testrunner.jobs import run_test
+
 from testscheduler import db
+from testscheduler import rq
 from testscheduler.models import TestRun
 from testscheduler.models import TestStatus
 from testscheduler.marshalling import testrun_fields
 from testscheduler.formatting import format_logs
 from testscheduler.parsers import create_parser, update_parser
+
+queue = rq.get_queue()
 
 
 class TaskList(Resource):
@@ -35,6 +40,7 @@ class TaskList(Resource):
         db.session.add(t)
         db.session.commit()
 
+        queue.enqueue(run_test, args=(t.id, t.path, "tokendummy"))
         return t, 201
 
 
