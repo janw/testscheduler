@@ -15,7 +15,7 @@
       </b-navbar>
       <main role="main" class="container pt-3">
         <transition name="fade" mode="out-in">
-          <router-view></router-view>
+          <router-view :key="$route.fullPath"></router-view>
         </transition>
       </main>
       <footer class="footer">
