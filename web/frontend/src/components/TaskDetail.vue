@@ -9,8 +9,9 @@
     </b-card>
     <b-card class="mb-3" bg-variant="dark" header="Log Output" text-variant="white">
       <div class="row">
-        <div class="col">
-          <p v-html="data.logs" class="logs-output text-monospace"></p>
+        <div class="col logs-output">
+          <p v-if="data.logs" v-html="data.logs" class="text-monospace"></p>
+          <p v-else class="text-center my-3">No logs generated yet.</p>
         </div>
       </div>
     </b-card>

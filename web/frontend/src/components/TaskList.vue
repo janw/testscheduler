@@ -52,7 +52,15 @@ export default {
     return {
       endpoint: `/api/tasks/${this.id}/`,
       page: 1,
-      fields: ["first_name", "last_name", "age", "status", "details"],
+      fields: [
+        { key: "id", label: "ID" },
+        { key: "username", label: "Requester" },
+        "created_at",
+        "test_env",
+        "path",
+        "status",
+        "details"
+      ],
       data: [],
       selectedItem: {},
       selectedModal: false,
@@ -65,8 +73,9 @@ export default {
   methods: {
     rowClass(item, type) {
       if (!item || type !== "row") return;
-      if (item.status === "Succeeded") return "table-success";
-      if (item.status === "Failed") return "table-danger";
+      if (item.status === "succeeded") return "table-success";
+      if (item.status === "failed") return "table-danger";
+      if (item.status === "unknown") return "table-warning";
     }
   }
 };
