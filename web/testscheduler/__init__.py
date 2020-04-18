@@ -8,8 +8,8 @@ application = Flask(
 api = Api(application, prefix="/api")
 rq = RQ(application)
 
-from testexecutor import resources  # noqa: E402
-from testexecutor import views  # noqa: E402, F401
+from testscheduler import resources  # noqa: E402
+from testscheduler import views  # noqa: E402, F401
 
 api.add_resource(resources.TaskList, "/tasks")
 api.add_resource(resources.Task, "/tasks/<task_id>")

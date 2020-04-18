@@ -12,6 +12,6 @@ RUN pip install -r requirements.txt
 
 WORKDIR /app
 COPY --from=frontend /src/dist ./frontend/dist
-COPY testexecutor ./testexecutor
+COPY testscheduler ./testscheduler
 
-ENTRYPOINT [ "gunicorn", "testexecutor", "-b", "0.0.0.0:8000" ]
+ENTRYPOINT [ "gunicorn", "testscheduler", "-b", "0.0.0.0:8000" ]

@@ -1,4 +1,4 @@
-from testexecutor import application
+from testscheduler import application
 
 
 @application.route("/")
