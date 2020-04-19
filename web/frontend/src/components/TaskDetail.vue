@@ -129,7 +129,7 @@ export default {
         if (this.data.logs) {
           this.$api
             .get(`/api/tasks/${this.id}/logs`)
-            .then(response => (this.logs = response.data))
+            .then(response => (this.logs = response.data.logs))
             .catch(error => {});
         }
       })
