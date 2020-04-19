@@ -11,6 +11,7 @@ from testscheduler.models import TestStatus
 from testscheduler.marshalling import testrun_fields
 from testscheduler.formatting import format_logs
 from testscheduler.parsers import create_parser, update_parser
+from testscheduler.utils import get_testfiles
 
 queue = rq.get_queue()
 
@@ -73,5 +74,5 @@ class TaskLogs(Resource):
 
 class TestList(Resource):
     def get(self):
-        # Return list of available/runnable tests for autocomplete
-        pass
+        """Returns a list of available tests files for autocomplete."""
+        return get_testfiles()

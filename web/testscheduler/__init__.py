@@ -19,3 +19,4 @@ from testscheduler import views  # noqa: E402, F401
 api.add_resource(resources.TaskList, "/tasks")
 api.add_resource(resources.Task, "/tasks/<task_id>")
 api.add_resource(resources.TaskLogs, "/tasks/<task_id>/logs")
+api.add_resource(resources.TestList, "/tests")
