@@ -1,6 +1,6 @@
-from testscheduler import application
+from testscheduler import application as app
 
 
-@application.route("/")
+@app.route("/")
 def index():
-    return application.send_static_file("index.html")
+    return app.send_static_file("index.html")

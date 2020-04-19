@@ -1,31 +1,41 @@
+from flask import request
+from flask_restful import abort
 from flask_restful import Resource
-from flask_restful import marshal_with
-from werkzeug import exceptions
+from marshmallow import ValidationError
 
 from testrunner.jobs import run_test
-
 from testscheduler import db
 from testscheduler import rq
+from testscheduler.schemas import testrun_schema
+from testscheduler.schemas import testrun_schema_list
+from testscheduler.schemas import testrun_logs
+from testscheduler.schemas import testrun_logs_status
 from testscheduler.models import TestRun
 from testscheduler.models import TestStatus
-from testscheduler.marshalling import testrun_fields
-from testscheduler.formatting import format_logs
-from testscheduler.parsers import create_parser, update_parser
-from testscheduler.utils import get_testfiles
+from testscheduler.utils import testfiles
 
 queue = rq.get_queue()
 
 
-class TaskList(Resource):
-    @marshal_with(testrun_fields)
-    def get(self):
-        runs = TestRun.query.all()
-        return runs
+def parse_args(loader):
+    json_data = request.get_json()
+    if not json_data:
+        abort(400, message="No input data provided")
+    try:
+        return loader.load(json_data)
+    except ValidationError as err:
+        abort(422, message="Data validation failed", errors=err.messages)
 
-    @marshal_with(testrun_fields)
+
+class TestRunList(Resource):
+    def get(self):
+        runs = TestRun.query.order_by(TestRun.id.desc()).all()
+        return testrun_schema_list.dump(runs)
+
     def post(self):
-        args = create_parser.parse_args()
-        env_id = args["env_id"]
+        data = parse_args(testrun_schema)
+        env_id = data["env_id"]
+
         if TestRun.query.filter(
             (TestRun.env_id == env_id)
             & (
@@ -33,46 +43,41 @@ class TaskList(Resource):
                 | (TestRun.status == TestStatus.running)
             )
         ).count():
-            raise exceptions.Conflict(f"Test env {env_id} is already in use")
+            abort(409, env_id=[f"Test environment {env_id} is already in use"])
 
-        # TODO: validate `path`
-
-        t = TestRun(**args)
-        db.session.add(t)
+        instance = TestRun(**data)
+        db.session.add(instance)
         db.session.commit()
 
-        queue.enqueue(run_test, args=(t.id, t.path, "tokendummy"))
-        return t, 201
+        job = queue.enqueue(run_test, args=(instance.id, instance.path, "tokendummy"))
+        print(job)
+        return testrun_schema.dump(instance), 201
 
 
-class Task(Resource):
-    @marshal_with(testrun_fields)
+class TestRunDetail(Resource):
     def get(self, task_id):
-        return TestRun.query.get_or_404(task_id)
+        testrun = TestRun.query.get_or_404(task_id)
+        return testrun_schema.dump(testrun)
 
-    @marshal_with(testrun_fields)
     def post(self, task_id):
-        args = update_parser.parse_args()
+        data = parse_args(testrun_logs_status)
         instance = TestRun.query.get_or_404(task_id)
-        instance.status = getattr(TestStatus, args["status"])
-        if args["logs"]:
-            instance.logs = args["logs"]
+        if "status" in data:
+            instance.status = data["status"]
+        if "logs" in data:
+            instance.logs = data["logs"]
 
         db.session.commit()
+        return testrun_schema.dump(instance)
 
-        return instance
 
-
-class TaskLogs(Resource):
+class TestRunLogs(Resource):
     def get(self, task_id):
         instance = TestRun.query.get_or_404(task_id)
-        if instance.logs:
-            return format_logs(instance.logs)
-
-        return None
+        return testrun_logs.dump(instance)
 
 
-class TestList(Resource):
+class AvailableTestsList(Resource):
     def get(self):
         """Returns a list of available tests files for autocomplete."""
-        return get_testfiles()
+        return testfiles

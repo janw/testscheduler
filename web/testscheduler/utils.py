@@ -1,13 +1,23 @@
+from itertools import chain
+from glob import iglob
+from os import chdir
 from testscheduler import application
 
-from os.path import join, pathsep
-from glob import iglob
+BLACKLISTED_DIRS = ["__pycache__/"]
 
 
 def get_testfiles():
     base_dir = application.config["TESTFILES_DIR"]
-    prefix_len = len(base_dir) + len(pathsep)
-    available_files = iglob(join(base_dir, "**/test*.py"), recursive=True)
-    unprefixed_files = map(lambda x: x[prefix_len:], available_files)
 
-    return sorted(unprefixed_files)
+    chdir(base_dir)
+    available_files = iglob("./**/test*.py", recursive=True)
+
+    available_dirs = filter(
+        lambda x: all((t not in x for t in BLACKLISTED_DIRS)),
+        iglob("./**/", recursive=True),
+    )
+
+    return sorted(chain(available_files, available_dirs))
+
+
+testfiles = get_testfiles()
