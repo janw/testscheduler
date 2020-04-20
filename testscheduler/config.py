@@ -16,5 +16,5 @@ SQLALCHEMY_DATABASE_URI = environ.get("DATABASE_URL", f"sqlite:///{BASE_DIR}/db.
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 RQ_REDIS_URL = environ.get("RQ_REDIS_URL", "redis://localhost:6379")
-TESTFILES_DIR = environ.get("RUNNER_TESTFILES_DIR", DEFAULT_TESTFILES_DIR)
+TESTFILES_DIR = "tests"
 PYTEST_BASE_ARGS = ["--color=yes", "-vv"]

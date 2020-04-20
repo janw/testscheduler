@@ -8,14 +8,15 @@ BLACKLISTED_DIRS = ["__pycache__/"]
 
 
 def get_testfiles():
-    base_dir = current_app.config["TESTFILES_DIR"]
+    base_dir = current_app.config["BASE_DIR"]
+    testfiles_dir = current_app.config["TESTFILES_DIR"]
 
     chdir(base_dir)
-    available_files = iglob("./**/test*.py", recursive=True)
+    available_files = iglob(f"./{testfiles_dir}/**/test*.py", recursive=True)
 
     available_dirs = filter(
         lambda x: all((t not in x for t in BLACKLISTED_DIRS)),
-        iglob("./**/", recursive=True),
+        iglob(f"./{testfiles_dir}/**/", recursive=True),
     )
 
     return sorted(chain(available_files, available_dirs))

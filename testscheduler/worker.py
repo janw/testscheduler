@@ -53,8 +53,9 @@ class UpdateLogs(Thread):
 def run_tests(id, path, token):
     app = create_app()
     api_base = app.config["API_BASE"]
+    base_dir = app.config["BASE_DIR"]
+    base_args = app.config["PYTEST_BASE_ARGS"]
     post_status(api_base, id, token, status="running")
-
     f = StringIO()
     t = UpdateLogs(f, api_base, id, token)
     t.start()
@@ -62,8 +63,7 @@ def run_tests(id, path, token):
         with redirect_stderr(f):
             try:
                 # Create app instance for access to .config
-                chdir(app.config["TESTFILES_DIR"])
-                base_args = app.config["PYTEST_BASE_ARGS"]
+                chdir(base_dir)
                 return_val = pytest.main([*base_args, path])
             except Exception:
                 f.write(traceback.format_exc())
