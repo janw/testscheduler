@@ -7,7 +7,7 @@ BASE_DIR = dirname(dirname(dirname(__file__)))
 
 ENV = environ.get("FLASK_ENV", "production")
 DEBUG = ENV == "development"
-TESTING = ENV == "development"
+TESTING = ENV == "development" or environ.get("FLASK_TESTING", "").lower() == "true"
 SQLALCHEMY_DATABASE_URI = environ.get("DATABASE_URL", f"sqlite:///{BASE_DIR}/db.sqlite")
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 

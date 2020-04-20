@@ -19,12 +19,10 @@ queue = rq.get_queue()
 
 def parse_args(loader):
     json_data = request.get_json()
-    if not json_data:
-        abort(400, message="No input data provided")
     try:
         return loader.load(json_data)
     except ValidationError as err:
-        abort(422, message="Data validation failed", errors=err.messages)
+        abort(400, message="Data validation failed", errors=err.messages)
 
 
 class TestRunList(Resource):
@@ -58,13 +56,13 @@ class TestRunList(Resource):
 
 
 class TestRunDetail(Resource):
-    def get(self, task_id):
-        testrun = TestRun.query.get_or_404(task_id)
+    def get(self, testrun_id):
+        testrun = TestRun.query.get_or_404(testrun_id)
         return testrun_schema.dump(testrun)
 
-    def post(self, task_id):
+    def post(self, testrun_id):
         data = parse_args(testrun_logs_status)
-        instance = TestRun.query.get_or_404(task_id)
+        instance = TestRun.query.get_or_404(testrun_id)
         if instance.token != data["token"]:
             abort(400, message="Invalid test run token")
 
@@ -80,8 +78,8 @@ class TestRunDetail(Resource):
 
 
 class TestRunLogs(Resource):
-    def get(self, task_id):
-        instance = TestRun.query.get_or_404(task_id)
+    def get(self, testrun_id):
+        instance = TestRun.query.get_or_404(testrun_id)
         return testrun_logs.dump(instance)
 
 

@@ -9,6 +9,7 @@ from requests import Session
 
 from testrunner import TESTFILES_DIR
 from testrunner import API_BASE
+from testrunner import PYTEST_BASE_ARGS
 
 environ["COLUMNS"] = "120"
 
@@ -16,7 +17,7 @@ session = Session()
 
 
 def post_status(id, token, **kwargs):
-    session.post(API_BASE + f"/api/tasks/{id}", json={"token": token, **kwargs})
+    session.post(API_BASE + f"/api/testruns/{id}", json={"token": token, **kwargs})
 
 
 def run_test(id, path, token):
@@ -26,7 +27,7 @@ def run_test(id, path, token):
     f = StringIO()
     with redirect_stdout(f):
         with redirect_stderr(f):
-            return_val = pytest.main(["--color=yes", path])
+            return_val = pytest.main([*PYTEST_BASE_ARGS, path])
 
     status = "succeeded" if return_val == 0 else "failed"
     logs = f.getvalue()
