@@ -112,6 +112,24 @@
 
 <script>
 export default {
+  sockets: {
+    connect: function() {
+      console.log("Socket connected");
+    },
+    taskChanged: function(data) {
+      console.log("Task changed");
+      if (data.id == this.data.id) {
+        this.data = data;
+      }
+    },
+    logsChanged: function(data) {
+      console.log("Logs changed");
+      if (data.id == this.data.id) {
+        this.logs = data.logs;
+      }
+    }
+  },
+
   props: ["id"],
   data() {
     return {

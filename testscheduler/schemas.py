@@ -33,6 +33,7 @@ class TestRunSchema(Schema):
 
 
 class TestRunLogsSchema(Schema):
+    id = fields.Int(dump_only=True)
     logs = fields.Method("serialize_logs", dump_only=True)
 
     def serialize_logs(self, item):

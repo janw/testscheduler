@@ -3,7 +3,6 @@ from flask_restful import abort
 from flask_restful import Resource
 from marshmallow import ValidationError
 
-from testrunner.jobs import run_test
 from testscheduler import rq
 from testscheduler import socketio
 from testscheduler.schemas import testrun_schema
@@ -13,8 +12,9 @@ from testscheduler.schemas import testrun_logs_status
 from testscheduler.models import db
 from testscheduler.models import TestRun
 from testscheduler.models import TestStatus
+from testscheduler.worker import run_tests
 
-queue = rq.get_queue()
+job_queue = rq.get_queue()
 
 
 def parse_args(loader):
@@ -49,7 +49,9 @@ class TestRunList(Resource):
         db.session.add(instance)
         db.session.commit()
 
-        queue.enqueue(run_test, args=(instance.id, instance.path, instance.token))
+        job_queue.enqueue(
+            run_tests, ttl=None, args=(instance.id, instance.path, instance.token)
+        )
         dumped_instance = testrun_schema.dump(instance)
         socketio.emit("taskAdded", dumped_instance)
         return dumped_instance, 201
@@ -70,6 +72,7 @@ class TestRunDetail(Resource):
             instance.status = data["status"]
         if "logs" in data:
             instance.logs = data["logs"]
+            socketio.emit("logsChanged", testrun_logs.dump(instance))
 
         db.session.commit()
         dumped_instance = testrun_schema.dump(instance)
