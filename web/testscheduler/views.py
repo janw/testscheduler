@@ -1,6 +1,8 @@
-from testscheduler import application as app
+from flask import current_app, Blueprint
+
+base = Blueprint("base", __name__, url_prefix="/")
 
 
-@app.route("/")
+@base.route("/")
 def index():
-    return app.send_static_file("index.html")
+    return current_app.send_static_file("index.html")

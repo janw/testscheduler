@@ -8,8 +8,8 @@ import pytest
 from requests import Session
 
 from testrunner import TESTFILES_DIR
+from testrunner import API_BASE
 
-API_BASE = "http://127.0.0.1:5000"
 environ["COLUMNS"] = "120"
 
 session = Session()

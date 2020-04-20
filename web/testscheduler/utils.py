@@ -1,13 +1,14 @@
 from itertools import chain
 from glob import iglob
 from os import chdir
-from testscheduler import application
+
+from flask import current_app
 
 BLACKLISTED_DIRS = ["__pycache__/"]
 
 
 def get_testfiles():
-    base_dir = application.config["TESTFILES_DIR"]
+    base_dir = current_app.config["TESTFILES_DIR"]
 
     chdir(base_dir)
     available_files = iglob("./**/test*.py", recursive=True)

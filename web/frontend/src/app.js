@@ -12,6 +12,13 @@ Vue.use(Api);
 import router from './router';
 import Main from './components/Main';
 
+import VueSocketIO from 'vue-socket.io'
+Vue.use(new VueSocketIO({
+  connection: '//',
+  options: { path: "/sock" }
+}))
+
+
 export default new Vue({
   el: '#app',
   router,

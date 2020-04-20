@@ -6,7 +6,6 @@ from marshmallow import validate
 from marshmallow import ValidationError
 from marshmallow_enum import EnumField
 from testscheduler.models import TestStatus
-from testscheduler.utils import testfiles
 
 STATUS_CHOICES = list(TestStatus.__members__.keys())
 ENV_ID_RANGE = (1, 100)
@@ -17,6 +16,8 @@ formatter = pygments.formatters.HtmlFormatter(linenos=True)
 
 
 def is_valid_tests_file(data):
+    from testscheduler.utils import testfiles
+
     if data not in testfiles:
         raise ValidationError("Not a valid test file")
 

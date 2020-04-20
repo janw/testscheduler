@@ -13,12 +13,14 @@
       <b-row class="mt-3">
         <b-col>
           <b-table
+            ref="tests_table"
+            stacked="md"
             primary-key="id"
             :items="data"
             :fields="fields"
             :busy="isBusy"
             :tbody-tr-class="rowClass"
-            responsive="sm"
+            responsive
           >
             <template v-slot:table-busy>
               <div class="text-center my-2">
@@ -39,8 +41,26 @@
 
 <script>
 import TaskCreate from "./TaskCreate";
-// import TaskListItem from "./TaskListItem";
 export default {
+  sockets: {
+    connect: function() {
+      console.log("Socket connected");
+    },
+    taskAdded: function(data) {
+      console.log("New task added");
+      this.data.unshift(data);
+    },
+    taskChanged: function(data) {
+      console.log("Task changed");
+      var elementPos = this.data
+        .map(function(x) {
+          return x.id;
+        })
+        .indexOf(data.id);
+      this.data[elementPos] = data;
+      this.$refs.tests_table.refresh();
+    }
+  },
   props: ["id"],
   created() {
     this.$api.get(`/api/tasks`).then(response => {

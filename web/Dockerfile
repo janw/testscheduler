@@ -12,6 +12,8 @@ RUN pip install -r requirements.txt
 
 WORKDIR /app
 COPY --from=frontend /src/dist ./frontend/dist
+COPY testrunner ./testrunner
 COPY testscheduler ./testscheduler
+COPY tests ./tests
 
-ENTRYPOINT [ "gunicorn", "testscheduler", "-b", "0.0.0.0:8000" ]
+ENTRYPOINT [ "gunicorn", "testscheduler.wsgi:app", "-b", "0.0.0.0:8000", "--worker-class", "eventlet", "-w", "1" ]

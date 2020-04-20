@@ -1,7 +1,10 @@
 import enum
 from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy
+from secrets import token_hex
 
-from testscheduler import db
+
+db = SQLAlchemy()
 
 
 class TestStatus(enum.Enum):
@@ -20,9 +23,7 @@ class TestRun(db.Model):
     path = db.Column(db.String(), nullable=False)
     status = db.Column(db.Enum(TestStatus), nullable=False, default=TestStatus.created)
     logs = db.Column(db.Text, nullable=False, default="")
+    token = db.Column(db.String(16), nullable=False, default=token_hex)
 
     def __repr__(self):
         return f"<TestRun {self.id} (Env {self.env_id})>"
-
-
-db.create_all()

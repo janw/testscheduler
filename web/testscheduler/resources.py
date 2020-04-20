@@ -4,15 +4,15 @@ from flask_restful import Resource
 from marshmallow import ValidationError
 
 from testrunner.jobs import run_test
-from testscheduler import db
 from testscheduler import rq
+from testscheduler import socketio
 from testscheduler.schemas import testrun_schema
 from testscheduler.schemas import testrun_schema_list
 from testscheduler.schemas import testrun_logs
 from testscheduler.schemas import testrun_logs_status
+from testscheduler.models import db
 from testscheduler.models import TestRun
 from testscheduler.models import TestStatus
-from testscheduler.utils import testfiles
 
 queue = rq.get_queue()
 
@@ -43,15 +43,18 @@ class TestRunList(Resource):
                 | (TestRun.status == TestStatus.running)
             )
         ).count():
-            abort(409, env_id=[f"Test environment {env_id} is already in use"])
+            abort(
+                409, errors={"env_id": [f"Test environment {env_id} is already in use"]}
+            )
 
         instance = TestRun(**data)
         db.session.add(instance)
         db.session.commit()
 
-        job = queue.enqueue(run_test, args=(instance.id, instance.path, "tokendummy"))
-        print(job)
-        return testrun_schema.dump(instance), 201
+        queue.enqueue(run_test, args=(instance.id, instance.path, instance.token))
+        dumped_instance = testrun_schema.dump(instance)
+        socketio.emit("taskAdded", dumped_instance)
+        return dumped_instance, 201
 
 
 class TestRunDetail(Resource):
@@ -62,13 +65,18 @@ class TestRunDetail(Resource):
     def post(self, task_id):
         data = parse_args(testrun_logs_status)
         instance = TestRun.query.get_or_404(task_id)
+        if instance.token != data["token"]:
+            abort(400, message="Invalid test run token")
+
         if "status" in data:
             instance.status = data["status"]
         if "logs" in data:
             instance.logs = data["logs"]
 
         db.session.commit()
-        return testrun_schema.dump(instance)
+        dumped_instance = testrun_schema.dump(instance)
+        socketio.emit("taskChanged", dumped_instance)
+        return dumped_instance
 
 
 class TestRunLogs(Resource):
@@ -80,4 +88,6 @@ class TestRunLogs(Resource):
 class AvailableTestsList(Resource):
     def get(self):
         """Returns a list of available tests files for autocomplete."""
+        from testscheduler.utils import testfiles
+
         return testfiles

@@ -7,6 +7,7 @@ x-common-conf: &common-conf
     - redis
   environment:
     RQ_REDIS_URL: "redis://redis"
+    SCHEDULER_API_BASE: "http://web:8000"
 
 services:
   web:
@@ -25,3 +26,5 @@ services:
   db:
     image: postgres:11-alpine
     restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: 8f6c8ad690ffc5438ea1e899

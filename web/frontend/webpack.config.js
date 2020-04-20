@@ -72,7 +72,7 @@ const devConfig = {
     port: 9000,
     proxy: [
       {
-        context: ['/api',],
+        context: ['/api', '/sock'],
         target: 'http://localhost:5000',
       },
     ],
