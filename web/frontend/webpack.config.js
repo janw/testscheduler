@@ -67,6 +67,7 @@ const devConfig = {
   mode: 'development',
   devtool: 'source-map',
   devServer: {
+    sockPath: '/__webpacksock',
     contentBase: path.join(__dirname, 'dist'),
     compress: false,
     port: 9000,
@@ -74,6 +75,7 @@ const devConfig = {
       {
         context: ['/api', '/sock'],
         target: 'http://localhost:5000',
+        ws: true
       },
     ],
   },

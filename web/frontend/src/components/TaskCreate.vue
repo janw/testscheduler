@@ -79,7 +79,7 @@ export default {
   created() {
     this.paths = [];
     this.$api
-      .get(`/api/tests`)
+      .get("/api/tests")
       .then(response => {
         this.paths = response.data;
       })
@@ -94,7 +94,7 @@ export default {
         this.valid_fields[field] = null;
       }
       this.$api
-        .post(`/api/tasks`, this.data)
+        .post("/api/testruns", this.data)
         .then(response => {
           this.paths = response.data;
         })

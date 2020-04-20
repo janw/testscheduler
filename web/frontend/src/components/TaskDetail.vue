@@ -123,12 +123,12 @@ export default {
     this.data = null;
     this.logs = null;
     this.$api
-      .get(`/api/tasks/${this.id}`)
+      .get(`/api/testruns/${this.id}`)
       .then(response => {
         this.data = response.data;
         if (this.data.logs) {
           this.$api
-            .get(`/api/tasks/${this.id}/logs`)
+            .get(`/api/testruns/${this.id}/logs`)
             .then(response => (this.logs = response.data.logs))
             .catch(error => {});
         }
