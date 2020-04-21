@@ -11,7 +11,10 @@ const createErrorHandlerInterceptor = (api) => {
       return response;
     },
     (error) => {
-      console.error(error);
+      if (error.response.status != 404) {
+        console.log(error)
+        console.log(error.response)
+      }
       return Promise.reject(error.response);
     }
   );

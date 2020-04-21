@@ -1,6 +1,6 @@
 from os import environ
-from os.path import dirname
 from os.path import abspath
+from os.path import dirname
 from os.path import join
 
 BASE_DIR = dirname(dirname(abspath(__file__)))

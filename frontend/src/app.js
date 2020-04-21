@@ -1,10 +1,9 @@
 import Vue from 'vue';
 
-import BootstrapVue from 'bootstrap-vue';
-Vue.use(BootstrapVue);
-
-import VueSpinners from 'vue-spinners';
-Vue.use(VueSpinners);
+import { LayoutPlugin, SpinnerPlugin, CardPlugin } from 'bootstrap-vue';
+Vue.use(LayoutPlugin);
+Vue.use(SpinnerPlugin);
+Vue.use(CardPlugin);
 
 import Api from './api';
 Vue.use(Api);

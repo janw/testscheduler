@@ -1,0 +1,29 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-docstring-first
+      - id: check-yaml
+      - id: debug-statements
+      - id: name-tests-test
+        name: "Tests should be named test*.py"
+        args: ["--django"] # Use "django-style" naming (test*.py)
+      - id: requirements-txt-fixer
+  - repo: https://github.com/asottile/reorder_python_imports
+    rev: v2.2.0
+    hooks:
+      - id: reorder-python-imports
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: "3.7.9"
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          ["flake8-typing-imports==1.7.0", "flake8-bugbear"]
+        args: [--max-line-length=88] # Adjust to black's default linelen
+  - repo: https://github.com/psf/black
+    rev: stable
+    hooks:
+      - id: black
+        language_version: python3

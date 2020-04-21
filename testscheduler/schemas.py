@@ -5,6 +5,7 @@ from marshmallow import Schema
 from marshmallow import validate
 from marshmallow import ValidationError
 from marshmallow_enum import EnumField
+
 from testscheduler.models import TestStatus
 
 STATUS_CHOICES = list(TestStatus.__members__.keys())
@@ -25,7 +26,7 @@ def is_valid_tests_file(data):
 class TestRunSchema(Schema):
     id = fields.Int(dump_only=True)
     username = fields.String(required=True, validate=validate.Length(3))
-    created_at = fields.AwareDateTime(dump_only=True)
+    created_at = fields.DateTime(dump_only=True)
     env_id = fields.Int(required=True, validate=validate.Range(*ENV_ID_RANGE))
     path = fields.Str(required=True, validate=is_valid_tests_file)
     status = EnumField(TestStatus, dump_only=True)

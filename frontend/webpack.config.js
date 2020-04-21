@@ -2,8 +2,12 @@ const path = require('path');
 const merge = require('webpack-merge');
 const VueLoaderPlugin = require('vue-loader/lib/plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 const devMode = process.env.NODE_ENV !== 'production';
+const styleLoader = devMode
+  ? 'vue-style-loader'
+  : MiniCssExtractPlugin.loader;
 
 const baseConfig = {
   context: path.resolve(__dirname, 'src'),
@@ -27,7 +31,8 @@ const baseConfig = {
       },
       {
         test: /\.s?[ac]ss$/,
-        use: ['style-loader', 'vue-style-loader', 'css-loader', 'sass-loader'],
+        use: ['style-loader', styleLoader
+          , 'css-loader', 'sass-loader'],
       },
       {
         test: /\.(gif|png|jpe?g|svg)$/i,
@@ -57,6 +62,9 @@ const baseConfig = {
       template: './template.html',
     }),
     new VueLoaderPlugin(),
+    new MiniCssExtractPlugin({
+      filename: 'style.[hash:8].css'
+    })
   ],
   performance: {
     hints: false,

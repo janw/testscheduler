@@ -19,7 +19,7 @@ def test_post_new_testrun(client):
     next GET to the same endpoint (as first list item).
     """
 
-    json = {"username": "Peter", "env_id": 1, "path": "./"}
+    json = {"username": "Peter", "env_id": 1, "path": "./tests/"}
 
     ret = client.post("/api/testruns", json=json)
     assert ret.status_code == 201

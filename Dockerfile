@@ -3,7 +3,13 @@ FROM node:12 as frontend
 WORKDIR /src
 COPY frontend ./
 
-RUN yarn install --non-interactive --prod && yarn run build
+RUN \
+    yarn --cwd frontend \
+    install \
+    --prod \
+    --no-node-version-check \
+    --frozen-lockfile && \
+    yarn --cwd frontend run build
 
 FROM python:3.7
 
@@ -12,7 +18,6 @@ RUN pip install -r requirements.txt
 
 WORKDIR /app
 COPY --from=frontend /src/dist ./frontend/dist
-COPY testrunner ./testrunner
 COPY testscheduler ./testscheduler
 COPY tests ./tests
 

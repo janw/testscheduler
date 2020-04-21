@@ -9,7 +9,7 @@ rq = RQ()
 
 
 def create_app(debug=False):
-    app = Flask(__name__, static_url_path="/static", static_folder="../frontend/dist",)
+    app = Flask(__name__, static_url_path="/static", static_folder="../frontend/dist")
     app.config.from_object("testscheduler.config")
 
     socketio.init_app(app)

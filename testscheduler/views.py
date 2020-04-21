@@ -1,4 +1,5 @@
-from flask import current_app, Blueprint
+from flask import Blueprint
+from flask import current_app
 
 base = Blueprint("base", __name__, url_prefix="/")
 

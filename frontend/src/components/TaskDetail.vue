@@ -18,6 +18,10 @@
             {{data.username}}
           </b-list-group-item>
           <b-list-group-item>
+            <strong>Created at:</strong>
+            {{data.created_at}}
+          </b-list-group-item>
+          <b-list-group-item>
             <strong>Environment:</strong>
             {{data.env_id}}
           </b-list-group-item>
@@ -31,10 +35,15 @@
           </b-list-group-item>
         </b-list-group>
       </div>
-      <div v-else>
+      <div v-if="loading">
         <div class="text-center my-2">
           <b-spinner class="align-middle"></b-spinner>
           <p class="mt-2">Loading …</p>
+        </div>
+      </div>
+      <div v-if="errorMsg">
+        <div class="text-center my-2">
+          <p class="mt-2">{{errorMsg}}</p>
         </div>
       </div>
     </b-card>
@@ -111,7 +120,13 @@
 </style>
 
 <script>
+import { BButton, BListGroup, BListGroupItem } from "bootstrap-vue";
 export default {
+  components: {
+    BListGroup,
+    BListGroupItem,
+    BButton
+  },
   sockets: {
     connect: function() {
       console.log("Socket connected");
@@ -133,13 +148,13 @@ export default {
   props: ["id"],
   data() {
     return {
+      loading: true,
+      errorMsg: null,
       data: null,
       logs: null
     };
   },
   created() {
-    this.data = null;
-    this.logs = null;
     this.$api
       .get(`/api/testruns/${this.id}`)
       .then(response => {
@@ -151,7 +166,17 @@ export default {
             .catch(error => {});
         }
       })
-      .catch(error => {});
+      .catch(error => {
+        var prefix = `Error ${error.status}: `;
+        if (error.status == 404) {
+          this.errorMsg = `${prefix}Test Run ${this.id} does not exist.`;
+        } else {
+          this.errorMsg = `${prefix}Something went wrong.`;
+        }
+      })
+      .then(() => {
+        this.loading = false;
+      });
   },
   computed: {
     itemVariant() {

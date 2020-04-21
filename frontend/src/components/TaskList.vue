@@ -41,9 +41,7 @@
               </div>
             </template>
             <template v-slot:cell(details)="data">
-              <small>
-                <b-link :to="{ name: 'TaskDetail', params: { id: data.item.id } }">View &raquo;</b-link>
-              </small>
+              <b-link :to="{ name: 'TaskDetail', params: { id: data.item.id } }">view &raquo;</b-link>
             </template>
           </b-table>
         </b-col>
@@ -60,6 +58,7 @@ table#tests_table .flip-list-move {
 
 <script>
 import TaskCreate from "./TaskCreate";
+import { BTable, BLink } from "bootstrap-vue";
 export default {
   sockets: {
     connect: function() {
@@ -105,7 +104,9 @@ export default {
     };
   },
   components: {
-    TaskCreate
+    TaskCreate,
+    BTable,
+    BLink
   },
   methods: {
     rowClass(item, type) {

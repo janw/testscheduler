@@ -1,29 +1,29 @@
 version: "3.7"
 
 x-common-conf: &common-conf
-  build: ./src
+  image: janwh/testscheduler
+  build: ./
   restart: unless-stopped
   depends_on:
     - redis
-  environment:
-    RQ_REDIS_URL: "redis://redis"
-    SCHEDULER_API_BASE: "http://web:8000"
+  volumes:
+    - ./tests:/app/tests:ro
 
 services:
   web:
     <<: *common-conf
     ports:
       - 8000:8000
+    environment:
+      RQ_REDIS_URL: "redis://redis"
+      DATABASE_URL: "postgres://postgres:SecurePassw0rd@db:5432/postgres"
 
   worker: &worker
     <<: *common-conf
     entrypoint: ["rq", "worker"]
-
-  worker2:
-    <<: *worker
-
-  worker3:
-    <<: *worker
+    environment:
+      RQ_REDIS_URL: "redis://redis"
+      SCHEDULER_API_BASE: "http://web:8000"
 
   redis:
     image: redis:alpine
@@ -33,4 +33,9 @@ services:
     image: postgres:11-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_PASSWORD: 8f6c8ad690ffc5438ea1e899
+      POSTGRES_PASSWORD: SecurePassw0rd
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:

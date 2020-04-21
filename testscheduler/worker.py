@@ -2,12 +2,12 @@ import traceback
 from contextlib import redirect_stderr
 from contextlib import redirect_stdout
 from io import StringIO
-from os import environ
 from os import chdir
-from threading import Thread
+from os import environ
 from threading import Event
-
+from threading import Thread
 from time import sleep
+
 import pytest
 from requests import Session
 
@@ -18,15 +18,29 @@ session = Session()
 stop_event = Event()
 
 
-def post_status(api_base, id, token, **kwargs):
-    resp = session.post(
-        api_base + f"/api/testruns/{id}", json={"token": token, **kwargs}
-    )
+def post_status(api_base, id, token, _tries=3, _retry_delay=5, **kwargs):
+    """Posts the status to the API for a given test run ID.
+
+    By default an unsuccessful attempt will be retried twice (3 tries total)
+    until a error raises an exception.
+    """
+    url = api_base + f"/api/testruns/{id}"
+    payload = {"token": token, **kwargs}
+    while _tries > 0:
+        resp = session.post(url, json=payload)
+        if resp.status_code < 400:
+            break
+        _tries -= 1
+        sleep(_retry_delay)
     resp.raise_for_status()
 
 
 class UpdateLogs(Thread):
-    """Thread to ship updated logs to the API during the test run."""
+    """Thread to ship updated logs to the API during the test run.
+
+    The thread accesses the open file object which pytest logs are written to
+    and thus provides "provisional" results to the backend for storage.
+    """
 
     def __init__(self, f, api_base, id, token, interval=3):
         super().__init__()
@@ -51,6 +65,11 @@ class UpdateLogs(Thread):
 
 
 def run_tests(id, path, token):
+    """Runs the given path of tests through pytest.
+
+    During the test run, a `UpdateLogs` background thread is periodically
+    updating the logs status with the backend.
+    """
     app = create_app()
     api_base = app.config["API_BASE"]
     base_dir = app.config["BASE_DIR"]

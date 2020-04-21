@@ -49,3 +49,13 @@
   opacity: 0;
 }
 </style>
+
+<script>
+import { BNavbar, BNavbarBrand } from "bootstrap-vue";
+export default {
+  components: {
+    BNavbar,
+    BNavbarBrand
+  }
+};
+</script>

@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title><%= htmlWebpackPlugin.options.title %></title>
 <% for (const css in htmlWebpackPlugin.files.css) { %>
-<link inline rel="stylesheet" src="<%= htmlWebpackPlugin.files.css[css] %>">
+<link rel="stylesheet" href="<%= htmlWebpackPlugin.files.css[css] %>">
 <% } %>
 <div id="app">
 <Main/>

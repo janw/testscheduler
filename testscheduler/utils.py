@@ -1,5 +1,5 @@
-from itertools import chain
 from glob import iglob
+from itertools import chain
 from os import chdir
 
 from flask import current_app

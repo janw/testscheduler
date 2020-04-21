@@ -5,13 +5,13 @@ from marshmallow import ValidationError
 
 from testscheduler import rq
 from testscheduler import socketio
-from testscheduler.schemas import testrun_schema
-from testscheduler.schemas import testrun_schema_list
-from testscheduler.schemas import testrun_logs
-from testscheduler.schemas import testrun_logs_status
 from testscheduler.models import db
 from testscheduler.models import TestRun
 from testscheduler.models import TestStatus
+from testscheduler.schemas import testrun_logs
+from testscheduler.schemas import testrun_logs_status
+from testscheduler.schemas import testrun_schema
+from testscheduler.schemas import testrun_schema_list
 from testscheduler.worker import run_tests
 
 job_queue = rq.get_queue()

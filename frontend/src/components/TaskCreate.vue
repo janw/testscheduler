@@ -3,12 +3,12 @@
     <b-form-row class="justify-content-between">
       <b-col cols="6" md="3">
         <label class="sr-only" for="inline-form-input-username">Username</label>
-        <b-input
+        <b-form-input
           id="inline-form-input-username"
           placeholder="Username"
           v-model="data.username"
           :state="valid_fields.username"
-        ></b-input>
+        ></b-form-input>
         <b-form-invalid-feedback
           v-bind:key="error"
           v-for="error in errors.username"
@@ -17,13 +17,13 @@
       </b-col>
       <b-col cols="6" md="2">
         <label class="sr-only" for="inline-form-input-envid">Environment ID</label>
-        <b-input
+        <b-form-input
           type="number"
           id="inline-form-input-envid"
           placeholder="Env ID"
           v-model="data.env_id"
           :state="valid_fields.env_id"
-        ></b-input>
+        ></b-form-input>
         <b-form-invalid-feedback
           v-bind:key="error"
           v-for="error in errors.env_id"
@@ -32,22 +32,31 @@
       </b-col>
       <b-col class="mt-2 mt-md-0">
         <label class="sr-only" for="inline-form-input-testpath">Test Path</label>
-        <b-form-input
-          list="testpath-list"
-          id="inline-form-input-testpath"
-          placeholder="Test Path"
-          v-model="data.path"
-          :state="valid_fields.path"
-        ></b-form-input>
-        <b-form-invalid-feedback
-          v-bind:key="error"
-          v-for="error in errors.path"
-          :state="valid_fields.path"
-        >{{error}}</b-form-invalid-feedback>
+        <b-input-group>
+          <template v-slot:prepend>
+            <b-dropdown text="Select" variant="primary">
+              <b-dropdown-item
+                @click="data.path=path"
+                v-for="path in paths"
+                v-bind:key="path"
+              >{{path}}</b-dropdown-item>
+            </b-dropdown>
+          </template>
 
-        <datalist id="testpath-list">
-          <option v-bind:key="path" v-for="path in paths">{{ path }}</option>
-        </datalist>
+          <b-form-input
+            list="testpath-list"
+            id="inline-form-input-testpath"
+            placeholder="Test Path"
+            v-model="data.path"
+            :state="valid_fields.path"
+          ></b-form-input>
+          <b-form-invalid-feedback
+            v-bind:key="error"
+            v-for="error in errors.path"
+            :state="valid_fields.path"
+          >{{error}}</b-form-invalid-feedback>
+        </b-input-group>
+        <datalist id="testpath-list" :options="paths"></datalist>
       </b-col>
       <b-col md="auto" class="mt-2 mt-md-0">
         <b-button :disabled="submit_disabled" type="submit" variant="primary">Submit</b-button>
@@ -58,9 +67,50 @@
 </template>
 
 <script>
+import {
+  BDropdown,
+  BDropdownItem,
+  BInputGroup,
+  BInputGroupPrepend,
+  BForm,
+  BFormInput,
+  BButton,
+  BFormInvalidFeedback
+} from "bootstrap-vue";
+
+const random_names = [
+  "James",
+  "Mary",
+  "John",
+  "Patricia",
+  "Robert",
+  "Jennifer",
+  "Michael",
+  "Linda",
+  "William",
+  "Elizabeth"
+];
+function random_test_env(min, max) {
+  return parseInt(Math.random() * (max - min + 1), 10) + min;
+}
+function random_name() {
+  return random_names[Math.floor(Math.random() * random_names.length)];
+}
+
 export default {
+  components: {
+    BDropdown,
+    BDropdownItem,
+    BInputGroup,
+    BInputGroupPrepend,
+    BForm,
+    BFormInput,
+    BButton,
+    BFormInvalidFeedback
+  },
   data() {
     return {
+      query: "",
       errors: {},
       valid_fields: {
         username: null,
@@ -68,8 +118,8 @@ export default {
         path: null
       },
       data: {
-        username: "",
-        env_id: "",
+        username: random_name(),
+        env_id: random_test_env(1, 100),
         path: ""
       },
       paths: [],
@@ -95,9 +145,7 @@ export default {
       }
       this.$api
         .post("/api/testruns", this.data)
-        .then(response => {
-          this.paths = response.data;
-        })
+        .then(response => {})
         .catch(error => {
           // Translate API validation results into frontend error displayal
           for (var field in error.data.errors) {

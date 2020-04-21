@@ -1,7 +1,8 @@
 import enum
 from datetime import datetime
-from flask_sqlalchemy import SQLAlchemy
 from secrets import token_hex
+
+from flask_sqlalchemy import SQLAlchemy
 
 
 db = SQLAlchemy()
@@ -15,6 +16,10 @@ class TestStatus(enum.Enum):
     unknown = 5
 
 
+def gen_token(length=16):
+    return token_hex(length)
+
+
 class TestRun(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), nullable=False)
@@ -23,7 +28,7 @@ class TestRun(db.Model):
     path = db.Column(db.String(), nullable=False)
     status = db.Column(db.Enum(TestStatus), nullable=False, default=TestStatus.created)
     logs = db.Column(db.Text, nullable=False, default="")
-    token = db.Column(db.String(16), nullable=False, default=token_hex)
+    token = db.Column(db.String(32), nullable=False, default=gen_token)
 
     def __repr__(self):
         return f"<TestRun {self.id} (Env {self.env_id})>"
