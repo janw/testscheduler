@@ -1,19 +1,20 @@
 from flask import Flask
 from flask_restful import Api
-from flask_rq2 import RQ
 from flask_socketio import SocketIO
+from redis import Redis
 
 socketio = SocketIO(path="/sock", async_mode="eventlet", cookie=None)
-
-rq = RQ()
 
 
 def create_app(debug=False):
     app = Flask(__name__, static_url_path="/static", static_folder="../frontend/dist")
     app.config.from_object("testscheduler.config")
 
+    # Socket.IO for handling frontend interactivity
     socketio.init_app(app)
-    rq.init_app(app)
+
+    # Redis for worker communication
+    app.redis = Redis.from_url(app.config["REDIS_URL"])
 
     # Set up database and ensure tables are created
     from testscheduler.models import db

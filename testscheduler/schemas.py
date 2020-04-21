@@ -33,6 +33,10 @@ class TestRunSchema(Schema):
     logs = fields.Boolean(truthy=set(), dump_only=True)
 
 
+class TestRunFullSchema(TestRunSchema):
+    token = fields.Str(dump_only=True)
+
+
 class TestRunLogsSchema(Schema):
     id = fields.Int(dump_only=True)
     logs = fields.Method("serialize_logs", dump_only=True)
@@ -50,6 +54,7 @@ class TestRunLogsStatusSchema(Schema):
 
 
 testrun_schema = TestRunSchema()
+testrun_full_schema = TestRunFullSchema()
 testrun_schema_list = TestRunSchema(many=True)
 testrun_logs_status = TestRunLogsStatusSchema()
 testrun_logs = TestRunLogsSchema()

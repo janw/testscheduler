@@ -1,24 +1,35 @@
-import traceback
-from contextlib import redirect_stderr
-from contextlib import redirect_stdout
-from io import StringIO
-from os import chdir
+import logging
+import json
+import signal
+import subprocess
+import sys
+from collections import deque
 from os import environ
 from threading import Event
 from threading import Thread
 from time import sleep
 
-import pytest
-from requests import Session
+import logzero
+from requests_futures.sessions import FuturesSession
+from typing import Dict
 
 from testscheduler import create_app
 
-environ["COLUMNS"] = "120"
-session = Session()
-stop_event = Event()
+LOG_FORMAT = (
+    "%(color)s[%(levelname)1.1s %(asctime)s %(threadName)s]%(end_color)s %(message)s"
+)
+LOG_LEVEL = logging.INFO
+
+formatter = logzero.LogFormatter(fmt=LOG_FORMAT)
+logger = logzero.setup_default_logger(formatter=formatter, level=LOG_LEVEL)
+session = FuturesSession()
 
 
-def post_status(api_base, id, token, _tries=3, _retry_delay=5, **kwargs):
+# Common thread reference structure, for accessing statuses.
+thread_refs: Dict[int, Thread] = {}
+
+
+def post_status(api_base, id, token, _tries=3, _retry_delay=1, **kwargs):
     """Posts the status to the API for a given test run ID.
 
     By default an unsuccessful attempt will be retried twice (3 tries total)
@@ -28,6 +39,7 @@ def post_status(api_base, id, token, _tries=3, _retry_delay=5, **kwargs):
     payload = {"token": token, **kwargs}
     while _tries > 0:
         resp = session.post(url, json=payload)
+        resp = resp.result()
         if resp.status_code < 400:
             break
         _tries -= 1
@@ -35,60 +47,151 @@ def post_status(api_base, id, token, _tries=3, _retry_delay=5, **kwargs):
     resp.raise_for_status()
 
 
-class UpdateLogs(Thread):
+class BaseThread(Thread):
+    name_suffix = "Base"
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.env_id = kwargs.pop("env_id")
+        self.name = f"EnvThread{self.name_suffix}-{self.env_id:03d}"
+        self.daemon = True
+
+        # Assign rest of kwargs to class properties
+        for key, val in kwargs.items():
+            setattr(self, key, val)
+
+
+class LogConsumerThread(BaseThread):
+    """Thread to consume the logs from the pytest subprocess and forward them.
+
+    The consumer
+    """
+
+    name_suffix = "LogConsumer"
+
+    def run(self):
+        logger.info("Attaching to pipe")
+        for line in iter(self.pipe.readline, ""):
+            self.consumer(line)
+        logger.info("Pipe exhausted. Closing.")
+        self.pipe.close()
+
+
+class LogPublisherThread(BaseThread):
     """Thread to ship updated logs to the API during the test run.
 
     The thread accesses the open file object which pytest logs are written to
     and thus provides "provisional" results to the backend for storage.
     """
 
-    def __init__(self, f, api_base, id, token, interval=3):
-        super().__init__()
-        self.f = f
-        self.api_base = api_base
-        self.job_id = id
-        self.job_token = token
-        self.check_interval = interval
+    name_suffix = "LogPusher"
+    check_interval = 3
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.stop_event = Event()
 
     def run(self):
         prev_state = ""
         while True:
             sleep(self.check_interval)
-            current_logs = self.f.getvalue()
+            current_logs = "".join(self.out)
             if current_logs != prev_state:
-                post_status(
-                    self.api_base, self.job_id, self.job_token, logs=current_logs
-                )
+                logger.debug("Updating logs")
+                post_status(*self.status_args, logs=current_logs)
                 prev_state = current_logs
-            if stop_event.wait(0):
+            if self.stop_event.wait(0):
                 break
 
 
-def run_tests(id, path, token):
-    """Runs the given path of tests through pytest.
+class RunnerThread(BaseThread):
+    name_suffix = "Runner"
 
-    During the test run, a `UpdateLogs` background thread is periodically
-    updating the logs status with the backend.
-    """
+    def run(self):
+        logger.info(f"Hello from {self.name}")
+        post_status(*self.status_args, status="running")
+
+        cmd = self.proc_args.pop("cmd")
+        process = subprocess.Popen(
+            cmd,
+            **self.proc_args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            close_fds=True,
+            bufsize=1,
+            universal_newlines=True,
+        )
+
+        # Start helper threads (log consumer and publisher) using common deque
+        self.out = deque()
+        logcon = LogConsumerThread(
+            env_id=self.env_id, pipe=process.stdout, consumer=self.out.append
+        )
+        logpub = LogPublisherThread(
+            env_id=self.env_id, status_args=self.status_args, out=self.out
+        )
+        logcon.start()
+        logpub.start()
+
+        logger.info("Running. Waiting for test run to finish")
+        process.wait()
+
+        logger.info("Tests finished. Tearing down.")
+        logpub.stop_event.set()
+        logpub.join()
+        logcon.join()
+
+        status = "succeeded" if process.returncode == 0 else "failed"
+        post_status(*self.status_args, status=status, logs="".join(self.out))
+        logger.info("Published final status/logs. Bye.")
+
+
+def run():
     app = create_app()
     api_base = app.config["API_BASE"]
+    pytest_args = app.config["PYTEST_BASE_ARGS"]
     base_dir = app.config["BASE_DIR"]
-    base_args = app.config["PYTEST_BASE_ARGS"]
-    post_status(api_base, id, token, status="running")
-    f = StringIO()
-    t = UpdateLogs(f, api_base, id, token)
-    t.start()
-    with redirect_stdout(f):
-        with redirect_stderr(f):
-            try:
-                # Create app instance for access to .config
-                chdir(base_dir)
-                return_val = pytest.main([*base_args, path])
-            except Exception:
-                f.write(traceback.format_exc())
-                return_val = -1
-    stop_event.set()
-    t.join()
-    logs = f.getvalue()
-    status = "succeeded" if return_val == 0 else "failed"
-    post_status(api_base, id, token, status=status, logs=logs)
+
+    pytest_env = environ.copy()
+    pytest_env.update(app.config["PYTEST_EXTRA_ENV"])
+
+    logger.info(f"Entering standby for receiving tasks")
+    while True:
+        alive_count = len([env_id for env_id, t in thread_refs.items() if t.is_alive()])
+        logger.debug(f"Standing by for new tasks ({alive_count} running)")
+        testrun = app.redis.blpop("testruns", timeout=60)
+        if not testrun:
+            continue
+        payload = json.loads(testrun[1])
+        env_id = payload["env_id"]
+        if env_id in thread_refs and thread_refs[env_id].is_alive():
+            logger.error(
+                f"Cannot execute: env {env_id} is already in use. Dropping task."
+            )
+            continue
+        proc_args = {
+            "cmd": ["python", "-m", "pytest", *pytest_args, payload["path"]],
+            "env": pytest_env,
+            "cwd": base_dir,
+        }
+        status_args = [api_base, payload["id"], payload["token"]]
+        task = RunnerThread(
+            env_id=env_id, proc_args=proc_args, status_args=status_args,
+        )
+        task.start()
+        thread_refs[env_id] = task
+
+
+def register_signal_handlers():
+    def handle_signal(sig, frame):
+        logger.info(f"Received signal {signal.Signals(sig).name}")
+
+        for env_id, task in thread_refs.items():
+            logger.info(f"Joining worker for env {env_id}")
+            task.join()
+
+        logger.info("All done. Bye.")
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, handle_signal)
+    signal.signal(signal.SIGTERM, handle_signal)
