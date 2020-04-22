@@ -62,17 +62,17 @@
 @import "~bootstrap/scss/functions";
 @import "~bootstrap/scss/variables";
 @import "~bootstrap/scss/mixins";
+@import "~bootstrap/scss/tables";
 
 .logs-output {
-  @include media-breakpoint-up(md) {
-    font-size: 0.6rem;
-  }
-  @include media-breakpoint-up(lg) {
-    font-size: 0.8rem;
-  }
+  font-size: 0.7rem;
   @include media-breakpoint-up(xl) {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
+}
+
+.highlighttable {
+  @extend .table-responsive;
 }
 
 .linenodiv {

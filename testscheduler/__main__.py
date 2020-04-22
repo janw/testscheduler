@@ -1,7 +1,8 @@
+
 import sys
 
 
-def main(args):
+def main(args):  # pragma: nocover
     if len(args) and args[0].lower() == "worker":
         from testscheduler.worker import run, register_signal_handlers
 

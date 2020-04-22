@@ -15,14 +15,14 @@ services:
     ports:
       - 8000:8000
     environment:
-      RQ_REDIS_URL: "redis://redis"
+      REDIS_URL: "redis://redis"
       DATABASE_URL: "postgres://postgres:SecurePassw0rd@db:5432/postgres"
 
   worker: &worker
     <<: *common-conf
-    entrypoint: ["rq", "worker"]
+    entrypoint: ["python", "-m", "testscheduler", "worker"]
     environment:
-      RQ_REDIS_URL: "redis://redis"
+      REDIS_URL: "redis://redis"
       SCHEDULER_API_BASE: "http://web:8000"
 
   redis:

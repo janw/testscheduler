@@ -94,4 +94,5 @@ The testsuite is also available via the frontend to be run via the runner worker
 * Frontend static files are served via a view on the backend application. They should instead be served by a webserver such as nginx directly.
 * Only rudimentary error handling in the worker process, especially regarding limited connectivity to the backend API.
 * Available test for the `./tests` directory can only updated by restarting the backend, although the path is directly mounted into the containers of the docker-compose stack.
-* No database migration handling. Extension not possible without data-loss.
+* No tests for worker component.
+* No database migration handling. Schema changes not possible without data-loss.

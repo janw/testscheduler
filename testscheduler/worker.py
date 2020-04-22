@@ -29,24 +29,6 @@ session = FuturesSession()
 thread_refs: Dict[int, Thread] = {}
 
 
-def post_status(api_base, id, token, _tries=3, _retry_delay=1, **kwargs):
-    """Posts the status to the API for a given test run ID.
-
-    By default an unsuccessful attempt will be retried twice (3 tries total)
-    until a error raises an exception.
-    """
-    url = api_base + f"/api/testruns/{id}"
-    payload = {"token": token, **kwargs}
-    while _tries > 0:
-        resp = session.post(url, json=payload)
-        resp = resp.result()
-        if resp.status_code < 400:
-            break
-        _tries -= 1
-        sleep(_retry_delay)
-    resp.raise_for_status()
-
-
 class BaseThread(Thread):
     name_suffix = "Base"
 
@@ -60,11 +42,34 @@ class BaseThread(Thread):
         for key, val in kwargs.items():
             setattr(self, key, val)
 
+    def post_status(self, _tries=3, _retry_delay=1, **kwargs):
+        """Posts the status to the API for a given test run ID.
+
+        By default an unsuccessful attempt will be retried twice (3 tries total)
+        until a error raises an exception.
+        """
+        api_base, id, token = self.status_args
+        url = api_base + f"/api/testruns/{id}"
+        payload = {"token": token, **kwargs}
+        while _tries > 0:
+            resp = session.post(url, json=payload)
+            resp = resp.result()
+            if resp.status_code < 400:
+                break
+            _tries -= 1
+            logger.error(
+                f"Failed updating test run {id}, trying {_tries} more time(s)."
+            )
+            sleep(_retry_delay)
+
 
 class LogConsumerThread(BaseThread):
     """Thread to consume the logs from the pytest subprocess and forward them.
 
-    The consumer
+    The consumer attaches to the provided `pipe` fileobject and consumes it
+    line-wise, forwarding the contents to the provided `consumer`. After the
+    object is exhausted (signalled by an empty string). the fileobject is
+    closed.
     """
 
     name_suffix = "LogConsumer"
@@ -98,18 +103,25 @@ class LogPublisherThread(BaseThread):
             current_logs = "".join(self.out)
             if current_logs != prev_state:
                 logger.debug("Updating logs")
-                post_status(*self.status_args, logs=current_logs)
+                self.post_status(logs=current_logs)
                 prev_state = current_logs
             if self.stop_event.wait(0):
                 break
 
 
 class RunnerThread(BaseThread):
+    """Runs the tests and handles all logic related to it.
+
+    The runner spawns two additional threads for processing and publishing the
+    log output of the test run. This specifically allows for intermediate
+    period updates of the log output towards the API.
+    """
+
     name_suffix = "Runner"
 
     def run(self):
         logger.info(f"Hello from {self.name}")
-        post_status(*self.status_args, status="running")
+        self.post_status(status="running")
 
         cmd = self.proc_args.pop("cmd")
         process = subprocess.Popen(
@@ -142,11 +154,19 @@ class RunnerThread(BaseThread):
         logcon.join()
 
         status = "succeeded" if process.returncode == 0 else "failed"
-        post_status(*self.status_args, status=status, logs="".join(self.out))
+        self.post_status(status=status, logs="".join(self.out))
         logger.info("Published final status/logs. Bye.")
 
 
 def run():
+    """Runs the background worker continuously for processing test runs.
+
+    The worker will connect to Redis and wait for new jobs coming in. The job
+    payload will be transformed into the required processing arguments. A
+    RunnerThread instance will be spawned with those arguments, and handles all
+    the actual test execution logic.
+    """
+
     app = create_app()
     api_base = app.config["API_BASE"]
     pytest_args = app.config["PYTEST_BASE_ARGS"]
@@ -155,6 +175,7 @@ def run():
     pytest_env = environ.copy()
     pytest_env.update(app.config["PYTEST_EXTRA_ENV"])
 
+    logger.info(f"Will talk to API at {api_base}")
     logger.info(f"Entering standby for receiving tasks")
     while True:
         alive_count = len([env_id for env_id, t in thread_refs.items() if t.is_alive()])
@@ -183,6 +204,11 @@ def run():
 
 
 def register_signal_handlers():
+    """Registers signal handlers for gracefully shutting down the worker.
+
+    This allows for running tasks to properly finish before the program exists.
+    """
+
     def handle_signal(sig, frame):
         logger.info(f"Received signal {signal.Signals(sig).name}")
 
